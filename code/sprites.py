@@ -44,34 +44,46 @@ class Rect(Sprite):
 
 class Ball(Sprite):
 
-    def __init__(self, colour, xpos, ypos, radius, width, y_change, x_change) -> None:
+    def __init__(self, colour, xpos, ypos, radius, width, y_change, x_change, acceleration) -> None:
         super().__init__(colour, width, xpos, ypos)
         self.radius = radius
         self.kicked = False
         self.x_change = y_change
         self.y_change = x_change
+        self.acceleration = acceleration
         self.kicked_speed = 3
-
+        
     def reset(self):
-        xpos = random.randint(30, 90)
-        ypos = random.randint(-100, -20)
-        x_change = random.randint(1, 3) * xpos // 30
-        y_change = random.randint(2, 5)
+        xpos = random.choice([random.randint(15, 100), random.randint(450, SCREEN_WIDTH-5)])
+        ypos = -random.randint(5,25)
+        acceleration = random.randint(1,5) / 1000
+        x_change = random.randint(2, 3)  
+        y_change = random.randint(2, 3) 
+        if xpos > (500 - 20) // 2:
+            y_change *= -1
+
         self.__init__(
-            self.colour, xpos, ypos, self.radius, self.width, y_change, x_change
+            self.colour, xpos, ypos, self.radius, self.width, y_change, x_change, acceleration
         )
 
     def draw(self, screen:pg.Surface):
         pg.draw.circle(screen, self.colour, (self.xpos, self.ypos), self.radius, self.width)
 
     def move(self):
+        if self.x_change > 0:
+            self.x_change -= self.acceleration
+        if self.y_change > 0:
+            self.y_change -= self.acceleration
+
         self.xpos += self.x_change
         self.ypos += self.y_change
 
-        if self.xpos > SCREEN_WIDTH + (self.radius * 2):
-            self.reset()
-
-        if self.ypos > SCREEN_HEIGHT + (self.radius * 2):
+        off_screen_conditions = (
+            self.xpos > SCREEN_WIDTH + (self.radius * 2),
+            self.xpos < 0,
+            self.ypos > SCREEN_HEIGHT + (self.radius * 2),
+        )
+        if True in off_screen_conditions:
             self.reset()
 
 
