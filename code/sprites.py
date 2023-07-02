@@ -1,5 +1,5 @@
 import pygame as pg
-import math
+from utils import distance_two_points
 import random
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT
@@ -41,6 +41,7 @@ class Rect(Sprite):
 
     def get_center(self) -> tuple[int]:
         return (self.xpos - (self.width // 2), self.ypos - (self.height // 2))
+    
 
 class Ball(Sprite):
 
@@ -54,6 +55,7 @@ class Ball(Sprite):
         self.kicked_speed = 3
         
     def reset(self):
+        print('RESETING')
         xpos = random.choice([random.randint(15, 100), random.randint(450, SCREEN_WIDTH-5)])
         ypos = -random.randint(5,25)
         acceleration = random.randint(1,5) / 1000
@@ -86,6 +88,9 @@ class Ball(Sprite):
         if True in off_screen_conditions:
             self.reset()
 
+    def get_center(self) -> tuple[int]:
+        return self.xpos, self.ypos
+
 
     def travel_to_goal(self):
         if self.kicked:
@@ -97,7 +102,7 @@ class Ball(Sprite):
             self.display = False
             self.reset()
 
-        
+
 class Player(Rect):
 
     def __init__(self, colour, width, height, xpos, ypos, speed) -> None:
@@ -111,10 +116,10 @@ class Player(Rect):
 
     def get_ball_player_distance(self, ball:Ball):
         plr_xpos, plr_ypos = self.get_center()
-        ball_xpos, y_xpos = ball.get_center()
+        ball_xpos, ball_ypos = ball.get_center()
 
-        ball_player_distance = math.sqrt(
-            math.pow(plr_xpos - ball_xpos, 2) + math.pow(plr_ypos - y_xpos, 2)
+        ball_player_distance = distance_two_points(
+            plr_xpos, ball_xpos, plr_ypos, ball_ypos
         )
         return ball_player_distance
     
@@ -136,4 +141,41 @@ class Goals(Rect):
         return False
 
 
+class Goalie(Rect):
 
+    def __init__(self, colour, width, height, xpos, ypos, speed) -> None:
+        super().__init__(colour, width, height, xpos, ypos)
+        self.speed = speed
+
+    def move(self, ball:Ball, goals:Goals):
+        if self.xpos > ball.xpos:
+            self.xpos -= self.speed
+        elif self.xpos < ball.xpos:
+            self.xpos += self.speed
+
+        self.boundaries(goals)
+
+    def boundaries(self, goals:Goals):
+        if self.xpos > goals.xpos + goals.width:
+            self.xpos = goals.xpos + goals.width
+        elif self.xpos < goals.xpos - self.width:
+            self.xpos = goals.xpos - self.width
+
+    def shot_saved(self, ball:Ball) -> bool:
+        ball_center = ball.get_center()
+        ball_x_center = ball_center[0]
+        ball_y_center = ball_center[1] - ball.radius
+
+        goalie_center = self.get_center()
+        goalie_x_center = goalie_center[0] 
+        goalie_y_center = goalie_center[1] + (self.height // 2)
+
+        if (
+            ball_y_center <= goalie_y_center 
+            and ball_x_center + ball.radius > goalie_x_center
+            and ball_x_center - ball.radius < goalie_x_center 
+        ):
+            return True
+        return False
+
+        
